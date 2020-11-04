@@ -1,37 +1,47 @@
-version: 2
-jobs:
-  security-scanning:
+version: 2.1
+
+executors:
+  circleci:
     machine:
       image: circleci/classic:latest
+
+orbs:
+  clair: ovotech/clair-scanner@1.6.0
+
+jobs:
+  build_images:
+    executor: circleci
     steps:
       - checkout
+      - run: 
+          name: Setup workspace
+          command: mkdir -p workspace_cache
       - run:
-          name: Setup python3
-          command: |
-            pyenv global 2.7.12 3.5.2
-            python --version
-            pip --version
-            python3 --version
-            pip3 --version
+          name: Build images
+          command: make all
       - run:
-          name: Setup Tests / Scanner Requirements
+          name: Save images
           command: |
-            make test_setup
-      - run:
-          name: Build Container
-          command: |
-            make all
-      - run:
-          name: Run Vulnerability Scanner
-          command: |
-            make setup_and_run_clair
-      - store_artifacts:
-          name: Store Scanner Logs
-          path: clair-scanner-logs
-          destintation: clair-scanner-logs
-      - store_artifacts:
-          path: test-results
-          destination: test-results
+            docker save splunk-redhat-8:latest | gzip > splunk-redhat-8.tgz
+            docker save uf-redhat-8:latest | gzip > uf-redhat-8.tgz
+            docker save splunk-debian-9:latest | gzip > splunk-debian-9.tgz
+            docker save uf-debian-9:latest | gzip > uf-debian-9.tgz
+      - persist_to_workspace:
+          root: workspace_cache
+          paths:
+            - splunk-redhat-8.tgz
+            - uf-redhat-8.tgz
+            - splunk-debian-9.tgz
+            - uf-debian-9.tgz
+
+  scan_images:
+    executor: clair/default
+    steps:
+      - attach_workspace:
+          at: workspace_cache
+      - clair/scan:
+          docker_tar_dir: ~/project/workspace_cache/
+
   debian10-testing:
     machine:
       image: circleci/classic:latest
@@ -147,11 +157,12 @@ jobs:
       - store_artifacts:
           path: test-results
           destination: test-results
+
 workflows:
   version: 2
-  build:
+  docker-splunk-pipeline:
     jobs:
-      - security-scanning
-      - debian10-testing
-      - container-validation
-      - redhat8-testing
+      - build_images
+      - scan_images:
+          requires:
+            - build_images
