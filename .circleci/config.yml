@@ -91,8 +91,6 @@ jobs:
           command: |
             docker save splunk-centos-7:latest | gzip > workspace_cache/splunk-centos-7.tgz
             docker save uf-centos-7:latest | gzip > workspace_cache/uf-centos-7.tgz
-            ls
-            ls workspace_cache/
       - persist_to_workspace:
           root: workspace_cache
           paths:
@@ -105,8 +103,14 @@ jobs:
       - checkout
       - attach_workspace:
           at: workspace_cache
+      - run:
+          name: Debug
+          command: |
+            pwd
+            ls
+            ls workspace_cache/
       - clair/scan:
-          docker_tar_dir: ~/project/workspace_cache/
+          docker_tar_dir: /root/project/workspace_cache/
 
   debian10-testing:
     machine:
