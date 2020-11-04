@@ -1,6 +1,9 @@
 version: 2.1
 
 executors:
+  py3:
+    docker:
+      - image: cimg/python:3.7
   circleci:
     machine:
       image: ubuntu-1604:201903-01
@@ -10,19 +13,16 @@ orbs:
   clair: ovotech/clair-scanner@1.6.0
 
 jobs:
-  setup:
-    executor: circleci
+  build_debian_9:
+    executor: py3
     steps:
       - checkout
-      - run: 
-          name: Setup workspace
-          command: mkdir -p workspace_cache
-
-  build_debian_9:
-    executor: circleci
-    steps:
+      - setup_remote_docker
       - attach_workspace:
           at: workspace_cache
+      - run:
+          name: Build images
+          command: make splunk-debian-9 uf-debian-9
       - run:
           name: Save images
           command: |
@@ -35,10 +35,15 @@ jobs:
             - uf-debian-9.tgz
 
   build_debian_10:
-    executor: circleci
+    executor: py3
     steps:
+      - checkout
+      - setup_remote_docker
       - attach_workspace:
           at: workspace_cache
+      - run:
+          name: Build images
+          command: make splunk-debian-10 uf-debian-10
       - run:
           name: Save images
           command: |
@@ -51,8 +56,10 @@ jobs:
             - uf-debian-10.tgz
 
   build_redhat_8:
-    executor: circleci
+    executor: py3
     steps:
+      - checkout
+      - setup_remote_docker
       - attach_workspace:
           at: workspace_cache
       - run:
@@ -70,8 +77,10 @@ jobs:
             - uf-redhat-8.tgz
 
   build_centos_7:
-    executor: circleci
+    executor: py3
     steps:
+      - checkout
+      - setup_remote_docker
       - attach_workspace:
           at: workspace_cache
       - run:
@@ -216,19 +225,10 @@ workflows:
   version: 2
   docker-splunk-pipeline:
     jobs:
-      - setup
-      - build_debian_9:
-          requires:
-            - setup
-      - build_debian_10:
-          requires:
-            - setup
-      - build_centos_7:
-          requires:
-            - setup
-      - build_redhat_8:
-          requires:
-            - setup
+      - build_debian_9
+      - build_debian_10
+      - build_centos_7
+      - build_redhat_8
       - scan_images:
           requires:
             - build_debian_9
