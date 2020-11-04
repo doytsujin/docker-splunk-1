@@ -3,36 +3,90 @@ version: 2.1
 executors:
   circleci:
     machine:
-      image: circleci/classic:latest
+      image: ubuntu-1604:201903-01
+    resource_class: xlarge
 
 orbs:
   clair: ovotech/clair-scanner@1.6.0
 
 jobs:
-  build_images:
+  setup:
     executor: circleci
     steps:
       - checkout
       - run: 
           name: Setup workspace
           command: mkdir -p workspace_cache
-      - run:
-          name: Build images
-          command: make all
+
+  build_debian_9:
+    executor: circleci
+    steps:
+      - attach_workspace:
+          at: workspace_cache
       - run:
           name: Save images
           command: |
-            docker save splunk-redhat-8:latest | gzip > splunk-redhat-8.tgz
-            docker save uf-redhat-8:latest | gzip > uf-redhat-8.tgz
-            docker save splunk-debian-9:latest | gzip > splunk-debian-9.tgz
-            docker save uf-debian-9:latest | gzip > uf-debian-9.tgz
+            docker save splunk-debian-9:latest | gzip > workspace_cache/splunk-debian-9.tgz
+            docker save uf-debian-9:latest | gzip > workspace_cache/uf-debian-9.tgz
+      - persist_to_workspace:
+          root: workspace_cache
+          paths:
+            - splunk-debian-9.tgz
+            - uf-debian-9.tgz
+
+  build_debian_10:
+    executor: circleci
+    steps:
+      - attach_workspace:
+          at: workspace_cache
+      - run:
+          name: Save images
+          command: |
+            docker save splunk-debian-10:latest | gzip > workspace_cache/splunk-debian-10.tgz
+            docker save uf-debian-10:latest | gzip > workspace_cache/uf-debian-10.tgz
+      - persist_to_workspace:
+          root: workspace_cache
+          paths:
+            - splunk-debian-10.tgz
+            - uf-debian-10.tgz
+
+  build_redhat_8:
+    executor: circleci
+    steps:
+      - attach_workspace:
+          at: workspace_cache
+      - run:
+          name: Build images
+          command: make splunk-redhat-8 uf-redhat-8
+      - run:
+          name: Save images
+          command: |
+            docker save splunk-redhat-8:latest | gzip > workspace_cache/splunk-redhat-8.tgz
+            docker save uf-redhat-8:latest | gzip > workspace_cache/uf-redhat-8.tgz
       - persist_to_workspace:
           root: workspace_cache
           paths:
             - splunk-redhat-8.tgz
             - uf-redhat-8.tgz
-            - splunk-debian-9.tgz
-            - uf-debian-9.tgz
+
+  build_centos_7:
+    executor: circleci
+    steps:
+      - attach_workspace:
+          at: workspace_cache
+      - run:
+          name: Build images
+          command: make splunk-centos-7 uf-centos-7
+      - run:
+          name: Save images
+          command: |
+            docker save splunk-centos-7:latest | gzip > workspace_cache/splunk-centos-7.tgz
+            docker save uf-centos-7:latest | gzip > workspace_cache/uf-centos-7.tgz
+      - persist_to_workspace:
+          root: workspace_cache
+          paths:
+            - splunk-centos-7.tgz
+            - uf-centos-7.tgz
 
   scan_images:
     executor: clair/default
@@ -162,7 +216,22 @@ workflows:
   version: 2
   docker-splunk-pipeline:
     jobs:
-      - build_images
+      - setup
+      - build_debian_9:
+          requires:
+            - setup
+      - build_debian_10:
+          requires:
+            - setup
+      - build_centos_7:
+          requires:
+            - setup
+      - build_redhat_8:
+          requires:
+            - setup
       - scan_images:
           requires:
-            - build_images
+            - build_debian_9
+            - build_debian_10
+            - build_centos_7
+            - build_redhat_8
