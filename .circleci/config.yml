@@ -91,6 +91,8 @@ jobs:
           command: |
             docker save splunk-centos-7:latest | gzip > workspace_cache/splunk-centos-7.tgz
             docker save uf-centos-7:latest | gzip > workspace_cache/uf-centos-7.tgz
+            ls
+            ls workspace_cache/
       - persist_to_workspace:
           root: workspace_cache
           paths:
@@ -100,6 +102,7 @@ jobs:
   scan_images:
     executor: clair/default
     steps:
+      - checkout
       - attach_workspace:
           at: workspace_cache
       - clair/scan:
@@ -223,7 +226,7 @@ jobs:
 
 workflows:
   version: 2
-  docker-splunk-pipeline:
+  pipeline:
     jobs:
       - build_debian_9
       - build_debian_10
