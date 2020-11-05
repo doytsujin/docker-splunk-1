@@ -106,12 +106,12 @@ jobs:
       - clair/scan:
           docker_tar_dir: /root/project/workspace_cache/
 
-  debian10-testing:
-    machine:
-      image: circleci/classic:latest
-    resource_class: xlarge
+  test_redhat_8:
+    executor: circleci
     steps:
       - checkout
+      - attach_workspace:
+          at: workspace_cache
       - run:
           name: Setup python3
           command: |
@@ -121,65 +121,19 @@ jobs:
             python3 --version
             pip3 --version
       - run:
-          name: Setup Tests / Scanner Requirements
+          name: Load images
           command: |
-            make test_setup
+            docker load -i workspace_cache/splunk-redhat-8.tar
+            docker load -i workspace_cache/uf-redhat-8.tar
       - run:
-          name: Build Debian 10 Splunk
-          command: |
-            make splunk-debian-10
+          name: Setup
+          command: make test_setup
       - run:
-          name: Build Debian 10 UF
-          command: |
-            make uf-debian-10
-      - run:
-          name: Test if image size increase
-          command: make test_debian10_image_size
-      - run:
-          name: Run small Debian 10 image tests
-          command: make run_small_tests_debian10
-          no_output_timeout: 20m
-      - run:
-          name: Run large Debian 10 image tests
-          command: make run_large_tests_debian10
-          no_output_timeout: 1h
-      - store_artifacts:
-          path: test-results
-          destination: test-results
-      - store_test_results:
-          path: test-results
-  redhat8-testing:
-    machine:
-      image: circleci/classic:latest
-    resource_class: xlarge
-    steps:
-      - checkout
-      - run:
-          name: Setup python3
-          command: |
-            pyenv global 2.7.12 3.5.2
-            python --version
-            pip --version
-            python3 --version
-            pip3 --version
-      - run:
-          name: Setup Tests / Scanner Requirements
-          command: |
-            make test_setup
-      - run:
-          name: Build Redhat 8 Splunk
-          command: |
-            make splunk-redhat-8
-      - run:
-          name: Build Redhat 8 UF
-          command: |
-            make uf-redhat-8
-      - run:
-          name: Run small Redhat 8 image tests
+          name: Run small tests
           command: make run_small_tests_redhat8
           no_output_timeout: 20m
       - run:
-          name: Run large Redhat 8 image tests
+          name: Run large tests
           command: make run_large_tests_redhat8
           no_output_timeout: 1h
       - store_artifacts:
@@ -187,11 +141,13 @@ jobs:
           destination: test-results
       - store_test_results:
           path: test-results
-  container-validation:
-    machine:
-      image: circleci/classic:latest
+
+  test_debian_10:
+    executor: circleci
     steps:
       - checkout
+      - attach_workspace:
+          at: workspace_cache
       - run:
           name: Setup python3
           command: |
@@ -201,26 +157,46 @@ jobs:
             python3 --version
             pip3 --version
       - run:
-          name: Setup Tests / Scanner Requirements
+          name: Load images
           command: |
-            make test_setup
+            docker load -i workspace_cache/splunk-debian-10.tar
+            docker load -i workspace_cache/uf-debian-10.tar
       - run:
-          name: Build Container
-          command: |
-            make all
+          name: Setup
+          command: make test_setup
       - run:
-          name: Export Build Images for Artifacts
-          command: |
-            make save_containers
+          name: Check image size
+          command: make test_debian10_image_size
       - run:
-          name: Test Python3 installation
-          command: make test_python3_all
+          name: Run small tests
+          command: make run_small_tests_debian10
+          no_output_timeout: 20m
       - run:
-          name: Test Python2 as the default
-          command: make test_python2_all
+          name: Run large tests
+          command: make run_large_tests_debian10
+          no_output_timeout: 1h
       - store_artifacts:
           path: test-results
           destination: test-results
+      - store_test_results:
+          path: test-results
+
+  export:
+    executor: py3
+    steps:
+      - checkout
+      - setup_remote_docker
+      - attach_workspace:
+          at: workspace_cache
+      - run:
+          name: Build py23 compatible images
+          command: make splunk-py23 uf-py23
+      - run:
+          name: Check py23 compatible images
+          command: make test_python3_all test_python2_all
+      - store_artifacts:
+          path: workspace_cache
+          destination: workspace_cache
 
 workflows:
   version: 2
@@ -231,6 +207,24 @@ workflows:
       - build_centos_7
       - build_redhat_8
       - scan_images:
+          requires:
+            - build_debian_9
+            - build_debian_10
+            - build_centos_7
+            - build_redhat_8
+      - test_redhat_8:
+          requires:
+            - build_debian_9
+            - build_debian_10
+            - build_centos_7
+            - build_redhat_8
+      - test_debian_10:
+          requires:
+            - build_debian_9
+            - build_debian_10
+            - build_centos_7
+            - build_redhat_8
+      - export:
           requires:
             - build_debian_9
             - build_debian_10
