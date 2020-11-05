@@ -26,13 +26,13 @@ jobs:
       - run:
           name: Save images
           command: |
-            docker save splunk-debian-9:latest | gzip > workspace_cache/splunk-debian-9.tgz
-            docker save uf-debian-9:latest | gzip > workspace_cache/uf-debian-9.tgz
+            docker save -o workspace_cache/splunk-debian-9.tar splunk-debian-9:latest
+            docker save -o workspace_cache/uf-debian-9.tar uf-debian-9:latest
       - persist_to_workspace:
           root: workspace_cache
           paths:
-            - splunk-debian-9.tgz
-            - uf-debian-9.tgz
+            - splunk-debian-9.tar
+            - uf-debian-9.tar
 
   build_debian_10:
     executor: py3
@@ -47,13 +47,13 @@ jobs:
       - run:
           name: Save images
           command: |
-            docker save splunk-debian-10:latest | gzip > workspace_cache/splunk-debian-10.tgz
-            docker save uf-debian-10:latest | gzip > workspace_cache/uf-debian-10.tgz
+            docker save -o workspace_cache/splunk-debian-10.tar splunk-debian-10:latest
+            docker save -o workspace_cache/uf-debian-10.tar uf-debian-10:latest
       - persist_to_workspace:
           root: workspace_cache
           paths:
-            - splunk-debian-10.tgz
-            - uf-debian-10.tgz
+            - splunk-debian-10.tar
+            - uf-debian-10.tar
 
   build_redhat_8:
     executor: py3
@@ -68,13 +68,13 @@ jobs:
       - run:
           name: Save images
           command: |
-            docker save splunk-redhat-8:latest | gzip > workspace_cache/splunk-redhat-8.tgz
-            docker save uf-redhat-8:latest | gzip > workspace_cache/uf-redhat-8.tgz
+            docker save -o workspace_cache/splunk-redhat-8.tar splunk-redhat-8:latest
+            docker save -o workspace_cache/uf-redhat-8.tar uf-redhat-8:latest
       - persist_to_workspace:
           root: workspace_cache
           paths:
-            - splunk-redhat-8.tgz
-            - uf-redhat-8.tgz
+            - splunk-redhat-8.tar
+            - uf-redhat-8.tar
 
   build_centos_7:
     executor: py3
@@ -89,13 +89,13 @@ jobs:
       - run:
           name: Save images
           command: |
-            docker save splunk-centos-7:latest | gzip > workspace_cache/splunk-centos-7.tgz
-            docker save uf-centos-7:latest | gzip > workspace_cache/uf-centos-7.tgz
+            docker save -o workspace_cache/splunk-centos-7.tar splunk-centos-7:latest
+            docker save -o workspace_cache/uf-centos-7.tar uf-centos-7:latest
       - persist_to_workspace:
           root: workspace_cache
           paths:
-            - splunk-centos-7.tgz
-            - uf-centos-7.tgz
+            - splunk-centos-7.tar
+            - uf-centos-7.tar
 
   scan_images:
     executor: clair/default
@@ -103,12 +103,6 @@ jobs:
       - checkout
       - attach_workspace:
           at: workspace_cache
-      - run:
-          name: Debug
-          command: |
-            pwd
-            ls
-            ls workspace_cache/
       - clair/scan:
           docker_tar_dir: /root/project/workspace_cache/
 
