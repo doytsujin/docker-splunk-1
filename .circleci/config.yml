@@ -105,6 +105,7 @@ jobs:
           at: workspace_cache
       - clair/scan:
           docker_tar_dir: /root/project/workspace_cache/
+          whitelist: /root/project/clair-whitelist.yml
 
   test_redhat_8:
     executor: circleci
