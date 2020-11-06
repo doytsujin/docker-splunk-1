@@ -100,6 +100,7 @@ jobs:
   scan_images:
     executor: clair/default
     steps:
+      - checkout
       - setup_remote_docker
       - attach_workspace:
           at: workspace_cache
