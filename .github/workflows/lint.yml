@@ -1,0 +1,17 @@
+name: Lint
+
+on: [push]
+
+jobs:
+  lint:
+    name: Lint Dockerfiles
+    runs-on: ubuntu-latest
+    steps: 
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Lint base-redhat-8
+      uses: luke142367/Docker-Lint-Action@v1.0.0
+      with:
+        target: base/redhat-8/Dockerfile
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
