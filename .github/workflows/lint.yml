@@ -6,12 +6,55 @@ jobs:
   lint:
     name: Lint Dockerfiles
     runs-on: ubuntu-latest
-    steps: 
+    steps:
     - name: Checkout
       uses: actions/checkout@v2
+
     - name: Lint base-redhat-8
       uses: luke142367/Docker-Lint-Action@v1.0.0
       with:
         target: base/redhat-8/Dockerfile
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Lint base-debian-9
+      uses: luke142367/Docker-Lint-Action@v1.0.0
+      with:
+        target: base/debian-9/Dockerfile
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Lint base-debian-10
+      uses: luke142367/Docker-Lint-Action@v1.0.0
+      with:
+        target: base/debian-10/Dockerfile
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Lint base-centos-7
+      uses: luke142367/Docker-Lint-Action@v1.0.0
+      with:
+        target: base/centos-7/Dockerfile
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Lint base-centos-8
+      uses: luke142367/Docker-Lint-Action@v1.0.0
+      with:
+        target: base/centos-8/Dockerfile
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Lint splunk
+      uses: luke142367/Docker-Lint-Action@v1.0.0
+      with:
+        target: splunk/common-files/Dockerfile
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Lint uf
+      uses: luke142367/Docker-Lint-Action@v1.0.0
+      with:
+        target: uf/common-files/Dockerfile
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
