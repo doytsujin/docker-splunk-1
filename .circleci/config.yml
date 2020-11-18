@@ -183,23 +183,6 @@ jobs:
       - store_test_results:
           path: test-results
 
-  export:
-    executor: py3
-    steps:
-      - checkout
-      - setup_remote_docker
-      - attach_workspace:
-          at: workspace_cache
-      - run:
-          name: Build py23 compatible images
-          command: make splunk-py23 uf-py23
-      - run:
-          name: Check py23 compatible images
-          command: make test_python3_all test_python2_all
-      - store_artifacts:
-          path: workspace_cache
-          destination: workspace_cache
-
 workflows:
   version: 2
   pipeline:
@@ -221,12 +204,6 @@ workflows:
             - build_centos_7
             - build_redhat_8
       - test_debian_10:
-          requires:
-            - build_debian_9
-            - build_debian_10
-            - build_centos_7
-            - build_redhat_8
-      - export:
           requires:
             - build_debian_9
             - build_debian_10
